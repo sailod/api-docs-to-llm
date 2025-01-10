@@ -1,0 +1,8 @@
+llama-index
+pypdf
+beautifulsoup4
+requests
+psycopg2-binary
+python-dotenv
+fastapi
+uvicorn
