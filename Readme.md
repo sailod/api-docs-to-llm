@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-A powerful document indexing and querying system that leverages LlamaIndex, pgvector, and Hugging Face embeddings to provide intelligent search and question-answering capabilities through a FastAPI interface.
+A powerful document (especially API documentation) indexing and querying system that leverages LlamaIndex, pgvector, and Hugging Face embeddings to provide intelligent search and question-answering capabilities through a FastAPI interface.
 
 ## 🌟 Features
 
