@@ -1,4 +1,4 @@
-# AI-Powered Document Indexing and Query System 🤖
+# AI-Powered API Documentation Indexing and Query System 🤖
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
