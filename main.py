@@ -17,6 +17,7 @@ app = FastAPI()
 
 class URLInput(BaseModel):
     urls: List[str]
+    reprocess_urls: Optional[List[str]] = None
 
 class QueryInput(BaseModel):
     query: str
@@ -69,7 +70,7 @@ def init_db():
     async_conn_str = "postgresql+asyncpg://admin:password@vector_store:5432/llamaindex"
     conn = psycopg2.connect(conn_str)
     
-    # Create URLs table if not exists
+    # Create tables if they don't exist
     with conn.cursor() as cur:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS ingested_urls (
@@ -77,6 +78,7 @@ def init_db():
                 ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
     conn.commit()
     
     vector_store = PGVectorStore(
@@ -92,12 +94,25 @@ def init_db():
 async def create_index(input_data: URLInput):
     vector_store, conn = init_db()
     
-    # Filter out already ingested URLs
+    # Get URLs to process
+    urls_to_process = input_data.urls
+    
+    # If reprocess_urls specified, remove those URLs from DB first
+    if input_data.reprocess_urls:
+        with conn.cursor() as cur:
+            for url in input_data.reprocess_urls:
+                cur.execute("DELETE FROM ingested_urls WHERE url = %s", (url,))
+                cur.execute("DELETE FROM data_embeddings WHERE metadata_->>'doc_id' = %s", (url,))
+        conn.commit()
+        # Add reprocess_urls to urls_to_process if not already included
+        urls_to_process.extend([url for url in input_data.reprocess_urls if url not in urls_to_process])
+    
+    # Filter out already ingested URLs that aren't marked for reprocessing
     with conn.cursor() as cur:
         cur.execute("SELECT url FROM ingested_urls")
         existing_urls = {row[0] for row in cur.fetchall()}
     
-    new_urls = [url for url in input_data.urls if url not in existing_urls]
+    new_urls = [url for url in urls_to_process if url not in existing_urls or (input_data.reprocess_urls and url in input_data.reprocess_urls)]
     
     if not new_urls:
         return {"status": "success", "message": "All URLs already indexed"}
@@ -121,7 +136,7 @@ async def create_index(input_data: URLInput):
     
     return {
         "status": "success", 
-        "message": f"Indexed {len(new_urls)} new documents. {len(input_data.urls) - len(new_urls)} were already indexed."
+        "message": f"Indexed {len(new_urls)} documents. {len(input_data.urls) - len(new_urls)} were already indexed and not marked for reprocessing."
     }
 
 @app.post("/query")
