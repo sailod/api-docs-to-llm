@@ -6,3 +6,11 @@ psycopg2-binary
 python-dotenv
 fastapi
 uvicorn
+sentence-transformers
+torch
+transformers
+llama-index-readers-web
+llama-index-vector-stores-postgres
+llama-index[huggingface]
+llama-index-embeddings-huggingface
+asyncpg
