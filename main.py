@@ -7,6 +7,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.llms import CustomLLM, LLMMetadata, CompletionResponse
 from llama_index.core import Document
 from llama_index.readers.web import SimpleWebPageReader
+from tree_sitter import Language, Parser
 import psycopg2
 from fastapi import FastAPI
 import requests
@@ -138,6 +139,62 @@ async def create_index(input_data: URLInput):
         "status": "success", 
         "message": f"Indexed {len(new_urls)} documents. {len(input_data.urls) - len(new_urls)} were already indexed and not marked for reprocessing."
     }
+
+@app.post("/create_codebase_index")
+async def create_codebase_index(git_url: URLInput):
+    # TODO: move this function work to a celery worker
+    vector_store, conn = init_db("codebase_index")
+
+    # Git clone requested repo
+    
+    # Load and parse Python, JS files
+    # Load Tree-Sitter Language
+    # For this line you need to first clone the relevant tree sitter parser repo
+    # git clone https://github.com/tree-sitter/tree-sitter-python.git
+    # git clone https://github.com/tree-sitter/tree-sitter-javascript.git
+    # git clone https://github.com/tree-sitter/tree-sitter-typescript.git
+    # git clone https://github.com/tree-sitter/tree-sitter-go.git
+
+    Language.build_library(
+        "build/my-languages.so",  # Output file
+        [
+            "tree-sitter-python",
+            "tree-sitter-javascript",
+            "tree-sitter-typescript",
+            "tree-sitter-go"
+        ]
+    )
+    # Load the compiled languages
+    PYTHON_LANGUAGE = Language("build/my-languages.so", "python")
+    JAVASCRIPT_LANGUAGE = Language("build/my-languages.so", "javascript")
+    TYPESCRIPT_LANGUAGE = Language("build/my-languages.so", "typescript")
+    GOLANG_LANGUAGE = Language("build/my-languages.so", "go")
+    
+    parser = Parser()
+    parser.set_language(PYTHON_LANGUAGE)
+    
+    def extract_code_structure(code):
+        tree = parser.parse(code.encode("utf-8"))
+        return tree.root_node.sexp()
+    
+    # Apply to files
+    documents = SimpleDirectoryReader("your_codebase_path").load_data()
+    for doc in documents:
+        doc.text += "\n\nParsed Code:\n" + extract_code_structure(doc.text)
+    
+    settings = init_services()
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    
+    index = VectorStoreIndex.from_documents(
+        documents=documents,
+        storage_context=storage_context
+    )
+        
+    return {
+        "status": "success", 
+        "message": f"Indexed {len(new_urls)} documents."
+    }
+
 
 @app.post("/query")
 async def query_index(input_data: QueryInput):
