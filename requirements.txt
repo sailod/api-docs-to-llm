@@ -14,3 +14,4 @@ llama-index-vector-stores-postgres
 llama-index[huggingface]
 llama-index-embeddings-huggingface
 asyncpg
+tree-sitter
